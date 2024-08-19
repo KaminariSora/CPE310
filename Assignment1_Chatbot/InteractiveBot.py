@@ -4,7 +4,7 @@ from difflib import get_close_matches
 from typing import List, Optional, Dict
 
 def loadInformationFile(file_path: str):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         data: dict = json.load(file) # load data จาก json
     return data
 
@@ -17,7 +17,7 @@ def findMatch(user_question: str, question: list[str]) -> Optional[str]:
     return matches[0] if matches else None
 
 def getAnswer(question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
-    for item in knowledge["question"]:
+    for item in knowledge["faqs"]:
         if isinstance(item["question"], list):
             for q in item["question"]:
                 if q.lower() == question.lower():
@@ -34,7 +34,7 @@ def ChatBot():
         if user_input.lower() in ['quit', 'exit']:
             break
 
-        best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["question"]])
+        best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["faqs"]])
         if best_match:
             answer: str = getAnswer(best_match, knowledge)
             print(f"Bot : {answer}")
@@ -43,7 +43,7 @@ def ChatBot():
             print(f"Bot : {notice}")
             new_answer = str = input("Teach new answer or 'skip' to skip: ")
             if new_answer.lower() != 'skip':
-                knowledge["question"].append(
+                knowledge["faqs"].append(
                     {
                         "question" : user_input,
                         "answer" : new_answer
