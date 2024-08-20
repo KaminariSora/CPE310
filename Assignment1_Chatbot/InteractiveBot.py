@@ -13,7 +13,7 @@ access_token = "J1HFcSzYDnwyuTeV8TAWW7WIkhBxx/lYIokmBdDxMb2zqrh1ECJ9vxipVejdBinD
 
 
 def loadInformationFile(file_path: str):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         data: dict = json.load(file) # load data จาก json
     return data
 
@@ -26,7 +26,7 @@ def findMatch(user_question: str, question: list[str]) -> Optional[str]:
     return matches[0] if matches else None
 
 def getAnswer(question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
-    for item in knowledge["question"]:
+    for item in knowledge["faqs"]:
         if isinstance(item["question"], list):
             for q in item["question"]:
                 if q.lower() == question.lower():
@@ -36,44 +36,60 @@ def getAnswer(question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Opti
                 return random.choice(item["answer"]) if isinstance(item["answer"], list) else item["answer"]
     return None
 
+
 def reply_msg(array_header, array_post_data):
     url = "https://api.line.me/v2/bot/message/reply"
     response = requests.post(url, headers=array_header, json=array_post_data)
     return response.json()
 
-def ChatBot(User_Input,reply_token):
+def ChatBot(User_Input,content):
     knowledge: dict = loadInformationFile('Assignment1_Chatbot/Information.json')
     user_input: str = User_Input # type: ignore
 
-    best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["question"]]) # type: ignore
+    reply_token = content['events'][0]['replyToken']
+    userId = content['events'][0]['source']['userId']
+
+    best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["faqs"]])
     if best_match:
         answer: str = getAnswer(best_match, knowledge) # type: ignore
         print(f"Bot : {answer}")
-    # else: 
-    #     answer = "I don't know the answer \nTeach new answer or 'skip' to skip: "
 
-        # print(f"Bot : {answer}")
-        # new_answer = str = User_Input
-        # if new_answer.lower() != 'skip':
-        #     knowledge["question"].append(
-        #         {
-        #             "question" : user_input,
-        #             "answer" : new_answer
-        #         }
-        #     )
-        #     saveInformation('Assignment1_Chatbot/Information.json', knowledge)
-        #     print("Bot : Thank you for teaching meʕ•́ᴥ•̀ʔっ")
-
-    array_post_data = {
-            "replyToken": reply_token,
-            "messages": [
-                {
-                    "type": "text",
-                    "text": answer
-                }
+        array_post_data = {
+        "replyToken": reply_token,
+        "messages": [
+            {
+                "type": "text",
+                "text": answer
+            }
             ]
         }
     
+
+    elif user_input == "ตัวเลือก":
+        array_post_data = {
+  "to": "Ub47e3bcd9779b4f736b3e4db6d401926",
+  "messages": [
+    {
+      "type": "text",
+      "text": "Hello Quick Reply!",
+      "quickReply": {
+        "items": [
+         
+          {
+            "type": "action",
+            "action": {
+              "type": "message",
+              "label": "ปรัชญาของภาควิชา",
+              "text": "ปรัชญาของภาควิชาวิศวกรรมคอมพิวเตอร์ มศว คืออะไร?"
+            }
+            }
+
+        ]
+      }
+    }
+   ]
+}
+
     return array_post_data
 
 @app.route("/", methods=['POST'])
@@ -85,13 +101,11 @@ def webhook():
     }
 
     message = content['events'][0]['message']['text']
-    reply_token = content['events'][0]['replyToken']
 
-    # print("message:",message)
+    print("message:",message)
     print(content)
-    # print("reply_token:",reply_token)
 
-    array_post_data = ChatBot(message,reply_token)
+    array_post_data = ChatBot(message,content)
     # print(array_post_data)
     reply_msg(array_header, array_post_data)
     return "OK", 200
