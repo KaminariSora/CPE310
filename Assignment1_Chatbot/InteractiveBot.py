@@ -14,7 +14,6 @@ access_token = "J1HFcSzYDnwyuTeV8TAWW7WIkhBxx/lYIokmBdDxMb2zqrh1ECJ9vxipVejdBinD
 
 def loadInformationFile(file_path: str):
     with open(file_path, 'r', encoding='utf-8') as file:
-    with open(file_path, 'r', encoding='utf-8') as file:
         data: dict = json.load(file) # load data จาก json
     return data
 
@@ -27,7 +26,6 @@ def findMatch(user_question: str, question: list[str]) -> Optional[str]:
     return matches[0] if matches else None
 
 def getAnswer(question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
-    for item in knowledge["faqs"]:
     for item in knowledge["faqs"]:
         if isinstance(item["question"], list):
             for q in item["question"]:
