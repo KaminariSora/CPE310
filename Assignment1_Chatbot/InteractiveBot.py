@@ -45,23 +45,23 @@ def ChatBot(User_Input,reply_token):
     knowledge: dict = loadInformationFile('Assignment1_Chatbot/Information.json')
     user_input: str = User_Input # type: ignore
 
-        best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["faqs"]])
-        if best_match:
-            answer: str = getAnswer(best_match, knowledge)
-            print(f"Bot : {answer}")
-        else: 
-            notice = "I don't know the answer"
-            print(f"Bot : {notice}")
-            new_answer = str = input("Teach new answer or 'skip' to skip: ")
-            if new_answer.lower() != 'skip':
-                knowledge["faqs"].append(
-                    {
-                        "question" : user_input,
-                        "answer" : new_answer
-                    }
-                )
-                saveInformation('Assignment1_Chatbot/Information.json', knowledge)
-                print("Bot : Thank you for teaching meʕ•́ᴥ•̀ʔっ")
+    best_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["faqs"]])
+    if best_match:
+        answer: str = getAnswer(best_match, knowledge)
+        print(f"Bot : {answer}")
+    else: 
+        notice = "I don't know the answer"
+        print(f"Bot : {notice}")
+        new_answer = str = input("Teach new answer or 'skip' to skip: ")
+        if new_answer.lower() != 'skip':
+            knowledge["faqs"].append(
+                {
+                    "question" : user_input,
+                    "answer" : new_answer
+                }
+            )
+            saveInformation('Assignment1_Chatbot/Information.json', knowledge)
+            print("Bot : Thank you for teaching meʕ•́ᴥ•̀ʔっ")
 
 if __name__ == '__main__':
     app.run(port=8080)
