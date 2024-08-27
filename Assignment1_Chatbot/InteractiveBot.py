@@ -17,16 +17,33 @@ def loadInformationFile(file_path: str):
         data: dict = json.load(file) # load data จาก json
     return data
 
-def findMatch(user_question: str, question: list[str]) -> Optional[str]:
-    matches: list = get_close_matches(user_question, question, n=1, cutoff=0.6)
-    return matches[0] if matches else None
+def check_keywords(sentence: str, keywords: List[str]) -> Optional[str]:
+    for keyword in keywords:
+        if isinstance(keyword, str) and isinstance(sentence, str):
+            if keyword in sentence:
+                print(f"Found keyword: '{keyword}' in the sentence.")
+                return keyword
+            else:
+                print(f"Keyword: '{keyword}' not found in the sentence.")
+    return None
+
+def findMatch(user_question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+    labels = [label for item in knowledge["faqs"] for label in item["label"]]
+
+    matched_keyword = check_keywords(user_question, labels)
+    
+    if matched_keyword:
+        for item in knowledge["faqs"]:
+            if matched_keyword in item["label"]:
+                return item["question"]
+    return None
 
 def getAnswer(question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
-    for item in knowledge["faqs"]:
+    faqs = knowledge.get("faqs", [])
+    for item in faqs:
         if isinstance(item["question"], list):
-            for q in item["question"]:
-                if q.lower() == question.lower():
-                    return random.choice(item["answer"]) if isinstance(item["answer"], list) else item["answer"]
+            if any(q.lower() == question.lower() for q in item["question"]):
+                return random.choice(item["answer"]) if isinstance(item["answer"], list) else item["answer"]
         else:
             if item["question"].lower() == question.lower():
                 return random.choice(item["answer"]) if isinstance(item["answer"], list) else item["answer"]
@@ -80,8 +97,7 @@ def ChatBot(User_Input,content):
     reply_token = content['events'][0]['replyToken']
     userId = content['events'][0]['source']['userId']
 
-    question_match: str | None = findMatch(user_input, [q["question"] for q in knowledge["faqs"]])
-
+    question_match = findMatch(user_input, knowledge)
 
     if question_match:
         answer: str = getAnswer(question_match, knowledge) # type: ignore
