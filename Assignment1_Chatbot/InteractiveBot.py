@@ -2,6 +2,7 @@ import json
 import random
 from difflib import get_close_matches
 from typing import List, Optional, Dict
+import datetime;
 
 #kla
 from flask import Flask, request, jsonify
@@ -9,7 +10,7 @@ import requests
 
 app = Flask(__name__)
 
-access_token = "J1HFcSzYDnwyuTeV8TAWW7WIkhBxx/lYIokmBdDxMb2zqrh1ECJ9vxipVejdBinDja4T1Vn9n4ikl5lGFG1APHXi9b4GHbX3Hteyjq4FpO/7Qi/ax03Igx3rvWS0Cz6z/dEcd+MppS/ASjMh7XtdRAdB04t89/1O/w1cDnyilFU="  # Copy Channel access token here
+access_token = "yYVf7xXcHTCGGCJfEIICTUv//9lfoAcF+JJ2frgvCEw4jGP0ZSiR7QAie/R+eAKQWkP93QG8U7c+MGTHlS0HaEW3i1Yk4PDEsxQ+hirNAENaVzcdiyPMhjL+gbpL8Q98EVydSDDYQJMhSuIdERlCAgdB04t89/1O/w1cDnyilFU="  # Copy Channel access token here
 
 
 def loadInformationFile(file_path: str):
@@ -21,17 +22,13 @@ def check_keywords(sentence: str, keywords: List[str]) -> Optional[str]:
     for keyword in keywords:
         if isinstance(keyword, str) and isinstance(sentence, str):
             if keyword in sentence:
-                print(f"Found keyword: '{keyword}' in the sentence.")
+                # print(f"Found keyword: '{keyword}' in the sentence.")
                 return keyword
-            else:
-                print(f"Keyword: '{keyword}' not found in the sentence.")
     return None
 
 def findMatch(user_question: str, knowledge: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
     labels = [label for item in knowledge["faqs"] for label in item["label"]]
-
     matched_keyword = check_keywords(user_question, labels)
-    
     if matched_keyword:
         for item in knowledge["faqs"]:
             if matched_keyword in item["label"]:
@@ -64,24 +61,25 @@ def quick_reply_list():
     knowledge: dict = loadInformationFile('Assignment1_Chatbot/Information.json')
     actions = []
     for idx,question in enumerate(knowledge['faqs']):
-        if question["label"] == "skip":
+        if question["label"][0] == "skip":
             continue
-        elif idx == 13:
-            action = {
-            "type": "action",
-            "action": {
-                "type": "message",
-                "label": "ต่อไป",
-                "text": "ต่อไป"
-                }
-            }
-            actions.append(action)
         else:
+            if idx == 13:
+                action = {
+                "type": "action",
+                "action": {
+                    "type": "message",
+                    "label": "ต่อไป",
+                    "text": "ต่อไป"
+                    }
+                }
+                actions.append(action)
+                
             action = {
             "type": "action",
             "action": {
                 "type": "message",
-                "label": question["label"],
+                "label": question["label"][0],
                 "text": question["question"]
                 }
             }
@@ -95,13 +93,14 @@ def ChatBot(User_Input,content):
     user_input: str = User_Input # type: ignore
 
     reply_token = content['events'][0]['replyToken']
+    User_message = content['events'][0]['message']['text']
     userId = content['events'][0]['source']['userId']
-
+    date_time = datetime.datetime.fromtimestamp(content['events'][0]['timestamp'] / 1000.0).strftime('%Y-%m-%d %H:%M:%S')
     question_match = findMatch(user_input, knowledge)
 
     if question_match:
         answer: str = getAnswer(question_match, knowledge) # type: ignore
-        print(f"Bot : {answer}")
+        # print(f"Bot : {answer}")
 
         array_post_data = {
         "replyToken": reply_token,
@@ -113,37 +112,56 @@ def ChatBot(User_Input,content):
             ]
         }
 
-    elif user_input == "ตัวเลือก":
+    elif user_input == "คำถามที่พบบ่อย":
         quick_reply_list_1 = quick_reply_list()[0:13]
-            
+        print(quick_reply_list_1)
+
         array_post_data = {
             "to": userId,
             "messages": [
                 {
                 "type": "text",
-                "text": "ตัวเลือก",
+                "text": "คำถามที่พบบ่อย",
                 "quickReply": {
                     "items": quick_reply_list_1
                 }
                 }
             ]
             }
-    
+        
+        answer = "quick_reply"
     elif user_input == "ต่อไป":
-        quick_reply_list_2 = quick_reply_list()[14:]
+        quick_reply_list_2 = quick_reply_list()[13:25]
             
         array_post_data = {
             "to": userId,
             "messages": [
                 {
                 "type": "text",
-                "text": "ตัวเลือก2",
+                "text": "คำถามที่พบบ่อย",
                 "quickReply": {
                     "items": quick_reply_list_2
                 }
                 }
             ]
             }
+        answer = "next"
+    
+    else:
+        answer = "ลองกด 'คำถามที่พบบ่อย?' นะคะ"
+        array_post_data = {
+        "replyToken": reply_token,
+        "messages": [
+            {
+                "type": "text",
+                "text": "ลองกด 'คำถามที่พบบ่อย?' นะคะ"
+            }
+            ]
+        }
+
+
+
+    print("[",date_time,"]","{userid :",userId,"} { Message :",User_message,"} { Answer :",answer," }")
 
     return array_post_data
 
@@ -162,7 +180,7 @@ def webhook():
     # print("message:",message)
     # print(content)
 
-    if message == "ตัวเลือก":
+    if message == "คำถามที่พบบ่อย":
         push_msg(array_header, array_post_data)
         return "OK", 200
     
