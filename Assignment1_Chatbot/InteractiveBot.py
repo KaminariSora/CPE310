@@ -2,7 +2,8 @@ import json
 import random
 from difflib import get_close_matches
 from typing import List, Optional, Dict
-import datetime;
+import datetime
+import os
 
 #kla
 from flask import Flask, request, jsonify
@@ -193,4 +194,5 @@ def webhook():
         return "OK", 200
 
 if __name__ == '__main__':
-    app.run(port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
